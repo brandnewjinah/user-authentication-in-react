@@ -9,111 +9,87 @@ import styled from "styled-components";
 
 const Registration = () => {
   const [account, setAccount] = useState({
-    name: "",
-    username: "",
+    email: "",
     password: "",
+    confirmpw: "",
   });
 
-  const [errors, setErrors] = useState({});
-
-  const postData = async () => {
-    const obj = {
-      name: account.name,
-      email: account.username,
-      password: account.password,
-    };
-    const regUser = await axios.post("http://localhost:3900/api/users", obj);
-  };
-
-  const validate = () => {
-    const errors = {};
-    if (account.name === "") {
-      errors.name = "Name is required";
-    }
-    if (account.username === "") {
-      errors.username = "Username is required";
-    }
-    if (account.password === "") {
-      errors.password = "Password is required";
-    }
-    return Object.keys(errors).length === 0 ? null : errors;
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const errors = validate();
-    setErrors(errors || {});
-    if (errors) return;
-    //call server
-    postData();
-  };
-
-  const validateProperty = ({ name, value }) => {
-    if (name === "name") {
-      if (value.trim() === "") {
-        return "Name is required";
-      }
-    }
-    if (name === "username") {
-      if (value.trim() === "") {
-        return "Username is required";
-      }
-    }
-    if (name === "password") {
-      if (value.trim() === "") {
-        return "Password is required";
-      }
-      if (value.length <= 3) {
-        return "Password must be more than 3 characters";
-      }
-    }
-  };
+  const [errors, setErrors] = useState();
 
   const handleChange = ({ currentTarget: input }) => {
-    const newerrors = { ...errors };
-    const errorMessage = validateProperty(input);
-    if (errorMessage) {
-      newerrors[input.name] = errorMessage;
-    } else {
-      delete newerrors[input.name];
-    }
-    setErrors(newerrors);
     const userInput = { ...account };
     userInput[input.name] = input.value;
     setAccount(userInput);
   };
 
+  const validate = () => {
+    const errors = {};
+    if (!account.email.match(/@/)) {
+      errors.email = "Not a valid email address";
+    }
+    if (account.email === "") {
+      errors.email = "Email address is required";
+    }
+    if (!account.password.match(/.{8}/)) {
+      errors.password = "Password must be at least 8 characters long";
+    }
+    if (account.password !== account.confirmpw) {
+      errors.confirmpw = "Password does not match";
+    }
+    return errors;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const errormsg = validate();
+    setErrors(errors || {});
+    if (errors) return;
+    postData();
+  };
+
+  const postData = async () => {
+    const user = {
+      email: account.email,
+      password: account.password,
+    };
+
+    const registerUser = await axios.post(
+      "http://localhost:5000/user/signup",
+      user
+    );
+  };
+
   return (
     <Container>
       <Header>
-        <h1>Create Account</h1>
+        <h1>Register</h1>
       </Header>
       <Form onSubmit={handleSubmit}>
         <InputField
-          error={errors.name}
-          name="name"
-          value={account.name}
-          label="Name"
+          label="Email Address"
+          name="email"
           type="text"
+          value={account.email}
+          error={errors && errors.email}
           handleChange={handleChange}
         />
         <InputField
-          error={errors.username}
-          name="username"
-          value={account.username}
-          label="Username"
-          type="text"
-          handleChange={handleChange}
-        />
-        <InputField
-          error={errors.password}
-          name="password"
-          value={account.password}
           label="Password"
+          name="password"
           type="password"
+          value={account.password}
+          error={errors && errors.password}
           handleChange={handleChange}
         />
-        <button disabled={validate()}>Register</button>
+        <InputField
+          label="Confirm Password"
+          name="confirmpw"
+          type="password"
+          value={account.confirmpw}
+          error={errors && errors.confirmpw}
+          handleChange={handleChange}
+        />
+        <button>Register</button>
       </Form>
     </Container>
   );

@@ -25,7 +25,6 @@ router.post("/signup", (req, res) => {
             });
           } else {
             const user = new userModel({
-              username: req.body.username,
               email: req.body.email,
               password: hash,
             });

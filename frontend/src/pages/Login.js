@@ -5,44 +5,52 @@ import InputField from "../components/InputField";
 
 //import styles and assets
 import styled from "styled-components";
+import axios from "axios";
 
-const Login = () => {
-  const [account, setAccount] = useState({ username: "", password: "" });
+const Login = (props) => {
+  const [account, setAccount] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
 
-  const validateEach = ({ name, value }) => {
-    if (name === "username") {
-      if (value.trim() === "") {
-        return "Username is required";
-      }
-    }
-    if (name === "password") {
-      if (value.trim() === "") {
-        return "Password is required";
-      }
-      if (value.length <= 4) {
-        return "Password must be more than 4 characters";
-      }
-    }
-  };
-
   const handleChange = ({ currentTarget: input }) => {
-    const newerrors = { ...errors };
-    const errorMessage = validateEach(input);
-    if (errorMessage) {
-      newerrors[input.name] = errorMessage;
-    } else {
-      delete newerrors[input.name];
-    }
-    setErrors(newerrors);
-
     const userInput = { ...account };
     userInput[input.name] = input.value;
     setAccount(userInput);
   };
 
+  const validate = () => {
+    const errors = {};
+    if (!account.email.match(/@/)) {
+      errors.email = "Not a valid email address";
+    }
+    if (account.email === "") {
+      errors.email = "Email address is required";
+    }
+    if (!account.password.match(/.{8}/)) {
+      errors.password = "Password must be at least 8 characters long";
+    }
+    return Object.keys(errors).length === 0 ? null : errors;
+  };
+
   const handleSubmit = (event) => {
     event.preventDefault();
+    const errormsg = validate();
+    setErrors(errormsg);
+    if (errors) return;
+    logUser();
+  };
+
+  const logUser = async () => {
+    const user = {
+      email: account.email,
+      password: account.password,
+    };
+    const { data: jwt } = await axios.post(
+      "http://localhost:5000/user/login",
+      user
+    );
+    console.log(jwt);
+    localStorage.setItem("token", jwt.token);
+    props.history.push("/home");
   };
 
   return (
@@ -52,11 +60,11 @@ const Login = () => {
       </Header>
       <Form onSubmit={handleSubmit}>
         <InputField
-          name="username"
+          label="Email Address"
+          name="email"
           type="text"
-          label="Username"
-          value={account.username}
-          error={errors.username}
+          value={account.email}
+          error={errors && errors.email}
           handleChange={handleChange}
         />
         <InputField
@@ -64,7 +72,7 @@ const Login = () => {
           type="password"
           label="Password"
           value={account.password}
-          error={errors.password}
+          error={errors && errors.password}
           handleChange={handleChange}
         />
         <button>Login</button>
